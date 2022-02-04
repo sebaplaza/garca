@@ -4,8 +4,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Result, Value};
 use skim::prelude::*;
 use std::io::Cursor;
+use std::io::{stdin, stdout, Write};
 use std::process::Command;
-
+use termion::event::Key;
+use termion::input::TermRead;
+use termion::raw::IntoRawMode;
 #[derive(Serialize, Deserialize)]
 struct Country {
     name: String,
@@ -79,9 +82,7 @@ fn skim_show(list: String) -> String {
 
     selected_items[0].output().into_owned()
 }
-
-#[tokio::main]
-async fn main() -> Result<()> {
+async fn choose() -> Result<(std::process::Child)> {
     let countries = get_countries().await?;
     let country = skim_show(countries);
     println!("selected country: {}", country);
@@ -92,9 +93,48 @@ async fn main() -> Result<()> {
     println!("selected station: {}", station_name);
     let station_url = station[1].trim();
     println!("selected station url: {}", station_url);
-    Command::new("mpv")
+    println!("Listening...");
+    let child = Command::new("mpv")
         .arg(station_url)
-        .output()
+        .spawn()
         .expect("failed to execute process");
+    Ok((child))
+}
+#[tokio::main]
+async fn main() -> Result<()> {
+    let stdin = stdin();
+    //setting up stdout and going into raw mode
+    let mut stdout = stdout().into_raw_mode().unwrap();
+    //printing welcoming message, clearing the screen and going to left top corner with the cursor
+    write!(stdout, r#"{}{}ctrl + q to exit, ctrl + h to print "Hello world!", alt + t to print "termion is cool""#, termion::cursor::Goto(1, 1), termion::clear::All)
+            .unwrap();
+    stdout.flush().unwrap();
+    //detecting keydown events
+    for c in stdin.keys() {
+        //clearing the screen and going to top left corner
+        write!(
+            stdout,
+            "{}{}",
+            termion::cursor::Goto(1, 1),
+            termion::clear::All
+        )
+        .unwrap();
+        let mut child: Option<std::process::Child> = None;
+        //i reckon this speaks for itself
+        match c.unwrap() {
+            Key::Ctrl('h') => println!("Hello world!"),
+            Key::Ctrl('q') => break,
+            Key::Alt('t') => println!("termion is cool"),
+            Key::Ctrl('r') => {
+                if let Some(mut value) = child {
+                    value.kill();
+                }
+                child = Some(choose().await?);
+            }
+            _ => (),
+        }
+
+        stdout.flush().unwrap();
+    }
     Ok(())
 }
