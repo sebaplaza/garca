@@ -5,6 +5,18 @@ use serde_json::{Result, Value};
 use skim::prelude::*;
 use std::io::Cursor;
 
+#[derive(Serialize, Deserialize)]
+struct Country {
+    name: String,
+    stationcount: u64,
+}
+#[derive(Serialize, Deserialize)]
+struct Station {
+    name: String,
+    country: String,
+    url: String,
+}
+
 async fn get_countries() -> Result<String> {
     let url = String::from("http://all.api.radio-browser.info/json/countries");
 
@@ -19,6 +31,22 @@ async fn get_countries() -> Result<String> {
     Ok(str)
 }
 
+async fn get_stations(country: &String) -> Result<String> {
+    let url = format!(
+        "http://all.api.radio-browser.info/json/stations/bycountryexact/{}",
+        country
+    );
+    println!("{}", url);
+    let (status, data) = call_api(url).await;
+
+    let stations: Vec<Station> = serde_json::from_str(&data)?;
+    let mut str: String = String::from("");
+    for station in stations {
+        let stationln = format!("{} | {}\n", &station.name, &station.url);
+        str.push_str(&stationln);
+    }
+    Ok(str)
+}
 async fn call_api(url: String) -> (u16, String) {
     let client = Client::new();
     let res = client
@@ -29,11 +57,6 @@ async fn call_api(url: String) -> (u16, String) {
     let status = res.status().as_u16();
     let data = res.text().await.expect("Problem extracting data");
     return (status, data);
-}
-#[derive(Serialize, Deserialize)]
-struct Country {
-    name: String,
-    stationcount: u64,
 }
 
 fn skim_show(list: String) -> String {
@@ -61,6 +84,12 @@ async fn main() -> Result<()> {
     let countries = get_countries().await?;
     let country = skim_show(countries);
     println!("selected country: {}", country);
-
+    let stations = get_stations(&country).await?;
+    let station = skim_show(stations);
+    let station: Vec<&str> = station.split('|').collect();
+    let station_name = station[0];
+    println!("selected station: {}", station_name);
+    let station_name = station[1].trim();
+    println!("selected station url: {}", station_name);
     Ok(())
 }
