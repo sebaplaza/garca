@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Result, Value};
 use skim::prelude::*;
 use std::io::Cursor;
+use std::process::Command;
 
 #[derive(Serialize, Deserialize)]
 struct Country {
@@ -89,7 +90,11 @@ async fn main() -> Result<()> {
     let station: Vec<&str> = station.split('|').collect();
     let station_name = station[0];
     println!("selected station: {}", station_name);
-    let station_name = station[1].trim();
-    println!("selected station url: {}", station_name);
+    let station_url = station[1].trim();
+    println!("selected station url: {}", station_url);
+    Command::new("mpv")
+        .arg(station_url)
+        .output()
+        .expect("failed to execute process");
     Ok(())
 }
