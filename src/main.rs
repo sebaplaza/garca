@@ -1,7 +1,7 @@
 extern crate skim;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use serde_json::{Result, Value};
+use serde_json::Result;
 use skim::prelude::*;
 use std::io::Cursor;
 use std::io::{stdin, stdout, Write};
@@ -24,7 +24,7 @@ struct Station {
 async fn get_countries() -> Result<String> {
     let url = String::from("http://all.api.radio-browser.info/json/countries");
 
-    let (status, data) = call_api(url).await;
+    let (_status, data) = call_api(url).await;
 
     let countries: Vec<Country> = serde_json::from_str(&data)?;
     let mut str: String = String::from("");
@@ -40,8 +40,7 @@ async fn get_stations(country: &String) -> Result<String> {
         "http://all.api.radio-browser.info/json/stations/bycountryexact/{}",
         country
     );
-    println!("{}", url);
-    let (status, data) = call_api(url).await;
+    let (_status, data) = call_api(url).await;
 
     let stations: Vec<Station> = serde_json::from_str(&data)?;
     let mut str: String = String::from("");
@@ -82,7 +81,7 @@ fn skim_show(list: String) -> String {
 
     selected_items[0].output().into_owned()
 }
-async fn choose() -> Result<(std::process::Child)> {
+async fn choose() -> Result<std::process::Child> {
     let countries = get_countries().await?;
     let country = skim_show(countries);
     println!("selected country: {}", country);
@@ -98,42 +97,43 @@ async fn choose() -> Result<(std::process::Child)> {
         .arg(station_url)
         .spawn()
         .expect("failed to execute process");
-    Ok((child))
+    Ok(child)
 }
+
+fn kill_process(child: Option<std::process::Child>) {
+    if let Some(mut value) = child {
+        value.kill();
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let stdin = stdin();
     //setting up stdout and going into raw mode
     let mut stdout = stdout().into_raw_mode().unwrap();
+    let home = termion::cursor::Goto(1, 1);
+    let clear = termion::clear::All;
     //printing welcoming message, clearing the screen and going to left top corner with the cursor
-    write!(stdout, r#"{}{}ctrl + q to exit, ctrl + h to print "Hello world!", alt + t to print "termion is cool""#, termion::cursor::Goto(1, 1), termion::clear::All)
-            .unwrap();
+    write!(stdout, r#"{}{}q to exit, r to listen radio"#, home, clear).unwrap();
     stdout.flush().unwrap();
     //detecting keydown events
+    let mut child: Option<std::process::Child> = None;
     for c in stdin.keys() {
         //clearing the screen and going to top left corner
-        write!(
-            stdout,
-            "{}{}",
-            termion::cursor::Goto(1, 1),
-            termion::clear::All
-        )
-        .unwrap();
-        let mut child: Option<std::process::Child> = None;
+        write!(stdout, "{}{}", home, clear).unwrap();
         //i reckon this speaks for itself
         match c.unwrap() {
-            Key::Ctrl('h') => println!("Hello world!"),
-            Key::Ctrl('q') => break,
-            Key::Alt('t') => println!("termion is cool"),
-            Key::Ctrl('r') => {
-                if let Some(mut value) = child {
-                    value.kill();
-                }
+            Key::Char('h') => println!("Hello world!"),
+            Key::Char('q') => {
+                kill_process(child);
+                break;
+            }
+            Key::Char('r') => {
+                kill_process(child);
                 child = Some(choose().await?);
             }
             _ => (),
         }
-
         stdout.flush().unwrap();
     }
     Ok(())
