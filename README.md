@@ -1,11 +1,17 @@
 # garca
 
 
-Listen worldwide online radios 
+Listen worldwide online radios
 
 [![asciicast](https://asciinema.org/a/er0Gl3dFoNAnrPNDKhVpqcr3m.svg)](https://asciinema.org/a/er0Gl3dFoNAnrPNDKhVpqcr3m)
 
 **WORK IN PROGRESS**
+
+## Requirements
+
+- mpv (media player)
+
+## How to ?
 
 'q' to quit
 
