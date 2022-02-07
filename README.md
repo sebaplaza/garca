@@ -9,7 +9,7 @@ Listen worldwide online radios
 
 ## Requirements
 
-- mpv (media player)
+- [mpv](https://mpv.io/installation/) (media player)
 
 ## How to ?
 
