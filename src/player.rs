@@ -22,8 +22,8 @@ impl Player {
     }
     pub fn stop(mut self) -> Player {
         if let Some(mut value) = self.child {
-            value.kill();
-        }
+            value.kill().expect("failed to kill mpv child process");
+        };
         self.child = None;
         self
     }

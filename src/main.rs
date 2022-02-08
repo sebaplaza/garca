@@ -10,7 +10,9 @@ mod api;
 mod player;
 
 async fn choose() -> String {
-    let countries = api::get_countries().await.unwrap();
+    let countries = api::get_countries()
+        .await
+        .expect("failed getting countries");
     let country = skim_show(countries);
     println!("selected country: {}", country);
     let stations = api::get_stations(&country).await.unwrap();
@@ -68,11 +70,13 @@ async fn main() {
                 break;
             }
             Key::Char('r') => {
+                write!(stdout, "{}{}", home, clear).unwrap();
                 if let Some(value) = my_player {
                     value.stop();
                 }
                 let station_url = choose().await;
                 let value = player::Player::new(station_url);
+                write!(stdout, "{}{}", home, clear).unwrap();
                 let value = value.play();
                 my_player = Some(value);
             }
