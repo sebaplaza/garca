@@ -1,5 +1,6 @@
 # garca
 
+![Build](https://github.com/sebaplaza/garca//actions/workflows/rust.yml/badge.svg)
 
 Listen worldwide online radios
 
