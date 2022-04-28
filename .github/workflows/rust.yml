@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install latest rust toolchain
         uses: actions-rs/toolchain@v1
@@ -18,6 +18,8 @@ jobs:
           toolchain: stable
           default: true
           override: true
+
+      - uses: Swatinem/rust-cache@v1
 
       - name: Build
         run: cargo build --all --release && strip target/release/garca && mv target/release/garca target/release/garca_amd64
@@ -60,7 +62,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install latest rust toolchain
         uses: actions-rs/toolchain@v1
@@ -69,6 +71,8 @@ jobs:
           target: x86_64-apple-darwin
           default: true
           override: true
+
+      - uses: Swatinem/rust-cache@v1
 
       - name: Build for mac
         run: cargo build --all --release && strip target/release/garca && mv target/release/garca target/release/garca_darwin
